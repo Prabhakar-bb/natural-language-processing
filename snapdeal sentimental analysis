@@ -1,0 +1,67 @@
+# creating empty reviews list 
+speakerreviews=[]
+
+for i in range(1,31):
+  ip=[]  
+  url="https://www.snapdeal.com/product/mtr-jbl-tg113-bluetooth-speaker/651813141537/reviews?page="+str(i)
+  response = requests.get(url)
+  soup = bs(response.content,"html.parser")# creating soup object to iterate over the extracted content 
+  reviews = soup.find_all("div",attrs={"class","head"})# Extracting the content under specific tags  
+  for i in range(len(reviews)):
+    ip.append(reviews[i].text)  
+ 
+  speakerreviews=speakerreviews+ip 
+  
+# writng reviews in a text file 
+with open("speaker.txt","w",encoding='utf8') as output:
+    output.write(str(speakerreviews))
+    
+speaker = " ".join(speakerreviews)
+
+import nltk
+# from nltk.corpus import stopwords
+# Removing unwanted symbols incase if exists
+speaker = re.sub("[^A-Za-z" "]+"," ", speaker).lower()
+speaker = re.sub("[0-9" "]+"," ", speaker)
+
+# words that contained in ecodot reviews
+speakerwords = speaker.split(" ")
+
+#TFIDF
+from sklearn.feature_extraction.text import TfidfVectorizer
+vectorizer = TfidfVectorizer(speakerwords, use_idf=True,ngram_range=(1, 3))
+X = vectorizer.fit_transform(speakerwords)
+
+with open("C:/Users/prabhakar/Desktop/r and python code/npl doc/stop.txt","r") as sw:
+    stopwords2 = sw.read()    
+stopwords2 = stopwords2.split("\n")
+remainingwords2 = [w for w in speakerwords if not w in stopwords2]
+
+# Joinining all the reviews into single paragraph 
+review2 = " ".join(remainingwords2)
+
+
+# WordCloud 
+wordcloud2 = WordCloud(background_color='White', width=1800,height=1400).generate(review2)
+plt.imshow(wordcloud2)
+
+
+# positive word cloud
+with open("C:/Users/prabhakar/Desktop/r and python code/npl doc/positive-words.txt","r") as pos:
+  poswords2 = pos.read().split("\n")
+# Choosing the only words which are present in positive words
+pos2 = " ".join ([w for w in speakerwords if  w in poswords])
+
+wordcloud2 = WordCloud(background_color='White', width=1800,height=1400).generate(pos2)
+plt.imshow(wordcloud2)
+
+
+# negative word cloud
+with open("C:/Users/prabhakar/Desktop/r and python code/npl doc/negative-words.txt", "r") as neg:
+  negwords = neg.read().split("\n")
+
+# negative word cloud
+neg2 = " ".join ([w for w in speakerwords if w in negwords])
+
+neg2 = WordCloud(background_color='black',width=1800,height=1400).generate(neg2)
+plt.imshow(neg2)
