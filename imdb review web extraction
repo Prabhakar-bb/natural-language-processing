@@ -1,0 +1,67 @@
+# creating empty reviews list 
+imdbreviews=[]
+
+for i in range(1,31):
+  ip=[]  
+  url="https://www.imdb.com/title/tt0468569/reviews?ref_=tt_ql_3"+str(i)
+  response = requests.get(url)
+  soup = bs(response.content,"html.parser")# creating soup object to iterate over the extracted content 
+  reviews = soup.find_all("div",attrs={"class","text show-more__control"})# Extracting the content under specific tags  
+  for i in range(len(reviews)):
+    ip.append(reviews[i].text)  
+ 
+  imdbreviews=imdbreviews+ip 
+
+# writng reviews in a text file 
+with open("imdb.txt","w",encoding='utf8') as output:
+    output.write(str(imdbreviews))
+    
+imdb = " ".join(imdbreviews)
+
+import nltk
+# from nltk.corpus import stopwords
+# Removing unwanted symbols incase if exists
+imdb = re.sub("[^A-Za-z" "]+"," ", imdb).lower()
+imdb = re.sub("[0-9" "]+"," ", imdb)
+
+# words that contained in ecodot reviews
+imdbwords = imdb.split(" ")
+
+#TFIDF
+from sklearn.feature_extraction.text import TfidfVectorizer
+vectorizer = TfidfVectorizer(imdbwords, use_idf=True,ngram_range=(1, 3))
+X = vectorizer.fit_transform(imdbwords)
+
+with open("C:/Users/prabhakar/Desktop/r and python code/npl doc/stop.txt","r") as sw:
+    stopwords3 = sw.read()    
+stopwords3 = stopwords3.split("\n")
+remainingwords3 = [w for w in imdbwords if not w in stopwords3]
+
+# Joinining all the reviews into single paragraph 
+review3 = " ".join(remainingwords3)
+
+
+# WordCloud 
+wordcloud3 = WordCloud(background_color='White', width=1800,height=1400).generate(review3)
+plt.imshow(wordcloud3)
+
+
+# positive word cloud
+with open("C:/Users/prabhakar/Desktop/r and python code/npl doc/positive-words.txt","r") as pos:
+  poswords3 = pos.read().split("\n")
+# Choosing the only words which are present in positive words
+pos3 = " ".join ([w for w in imdbwords if  w in poswords3])
+
+wordcloud3 = WordCloud(background_color='White', width=1800,height=1400).generate(pos3)
+plt.imshow(wordcloud3)
+
+
+# negative word cloud
+with open("C:/Users/prabhakar/Desktop/r and python code/npl doc/negative-words.txt", "r") as neg:
+  negwords3 = neg.read().split("\n")
+
+# negative word cloud
+neg3 = " ".join ([w for w in imdbwords if w in negwords3])
+
+neg3 = WordCloud(background_color='black',width=1800,height=1400).generate(neg3)
+plt.imshow(neg3)
