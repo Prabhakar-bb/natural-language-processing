@@ -1,0 +1,66 @@
+# creating empty reviews list 
+ecodotreviews=[]
+
+for i in range(1,31):
+  ip=[]  
+  url="https://www.amazon.in/All-new-Echo-Dot-3rd-Gen/product-reviews/B07PFFMP9P/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews"+str(i)
+  response = requests.get(url)
+  soup = bs(response.content,"html.parser")# creating soup object to iterate over the extracted content 
+  reviews = soup.find_all("span",attrs={"class","a-size-base review-text review-text-content"})# Extracting the content under specific tags  
+  for i in range(len(reviews)):
+    ip.append(reviews[i].text)  
+ 
+  ecodotreviews=ecodotreviews+ip 
+
+# writng reviews in a text file 
+with open("ecodot.txt","w",encoding='utf8') as output:
+    output.write(str(ecodotreviews))
+    
+ecodot = " ".join(ecodotreviews)
+
+import nltk
+# from nltk.corpus import stopwords
+# Removing unwanted symbols incase if exists
+ecodot = re.sub("[^A-Za-z" "]+"," ", ecodot).lower()
+ecodot = re.sub("[0-9" "]+"," ", ecodot)
+
+# words that contained in ecodot reviews
+ecodotwords = ecodot.split(" ")
+
+#TFIDF
+from sklearn.feature_extraction.text import TfidfVectorizer
+vectorizer = TfidfVectorizer(ecodotwords, use_idf=True,ngram_range=(1, 3))
+X = vectorizer.fit_transform(ecodotwords)
+
+with open("C:/Users/prabhakar/Desktop/r and python code/npl doc/stop.txt","r") as sw:
+    stopwords = sw.read()    
+stopwords = stopwords.split("\n")
+remainingwords = [w for w in ecodotwords if not w in stopwords]
+
+# Joinining all the reviews into single paragraph 
+review = " ".join(remainingwords)
+
+
+# WordCloud 
+wordcloud = WordCloud(background_color='White', width=1800,height=1400).generate(review)
+plt.imshow(wordcloud)
+
+# positive word cloud
+with open("C:/Users/prabhakar/Desktop/r and python code/npl doc/positive-words.txt","r") as pos:
+  poswords = pos.read().split("\n")
+# Choosing the only words which are present in positive words
+pos = " ".join ([w for w in ecodotwords if  w in poswords])
+
+wordcloud2 = WordCloud(background_color='White', width=1800,height=1400).generate(pos)
+plt.imshow(wordcloud2)
+
+
+# negative word cloud
+with open("C:/Users/prabhakar/Desktop/r and python code/npl doc/negative-words.txt", "r") as neg:
+  negwords = neg.read().split("\n")
+
+# negative word cloud
+neg = " ".join ([w for w in ecodotwords if w in negwords])
+
+neg2 = WordCloud(background_color='black',width=1800,height=1400).generate(neg)
+plt.imshow(neg2)
